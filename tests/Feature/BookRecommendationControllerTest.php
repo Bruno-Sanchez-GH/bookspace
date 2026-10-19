@@ -77,7 +77,7 @@ class BookRecommendationControllerTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'www.googleapis.com/books/v1/volumes*' => Http::response($this->googleBooksResponse()),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response(
                 $this->geminiResponse([
                     'summary' => 'Elegí ciencia ficción con mundos complejos.',
                     'recommendations' => [[
@@ -102,16 +102,15 @@ class BookRecommendationControllerTest extends TestCase
         Http::assertSent(function (Request $request): bool {
             $payload = $request->data();
 
-            return $request->url() === 'https://generativelanguage.googleapis.com/v1beta/interactions'
+            return $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent'
                 && $request->header('x-goog-api-key')[0] === 'test-gemini-key'
-                && $payload['model'] === 'gemini-3.8-flash'
-                && $payload['response_format']['mime_type'] === 'application/json'
-                && $payload['response_format']['schema']['properties']['recommendations']['items']['properties']['external_id']['enum'] === [
+                && $payload['generationConfig']['responseMimeType'] === 'application/json'
+                && $payload['generationConfig']['responseSchema']['properties']['recommendations']['items']['properties']['external_id']['enum'] === [
                     'hyperion-volume',
                     'foundation-volume',
                 ]
-                && str_contains($payload['input'], 'Dune')
-                && ! str_contains($payload['input'], 'private@example.com');
+                && str_contains($payload['contents'][0]['parts'][0]['text'], 'Dune')
+                && ! str_contains($payload['contents'][0]['parts'][0]['text'], 'private@example.com');
         });
         Http::assertSentCount(2);
     }
@@ -150,7 +149,7 @@ class BookRecommendationControllerTest extends TestCase
                         ],
                     ]],
                 ]),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response(
                 $this->geminiResponse([
                     'summary' => 'Continuá explorando el universo de Dune.',
                     'recommendations' => [[
@@ -215,7 +214,7 @@ class BookRecommendationControllerTest extends TestCase
                     ],
                 ],
             ]),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response(
                 $this->geminiResponse([
                     'summary' => 'Una opción que todavía no guardaste.',
                     'recommendations' => [[
@@ -231,11 +230,11 @@ class BookRecommendationControllerTest extends TestCase
         $response->assertRedirect(route('library.index'));
         $response->assertSessionHas('bookRecommendations.books.0.external_id', 'new-volume');
         Http::assertSent(function (Request $request): bool {
-            if ($request->url() !== 'https://generativelanguage.googleapis.com/v1beta/interactions') {
+            if ($request->url() !== 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent') {
                 return false;
             }
 
-            return $request->data()['response_format']['schema']['properties']['recommendations']['items']['properties']['external_id']['enum'] === [
+            return $request->data()['generationConfig']['responseSchema']['properties']['recommendations']['items']['properties']['external_id']['enum'] === [
                 'new-volume',
             ];
         });
@@ -252,7 +251,7 @@ class BookRecommendationControllerTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'www.googleapis.com/books/v1/volumes*' => Http::response($this->googleBooksResponse()),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response(
                 $this->geminiResponse([
                     'summary' => 'Una selección personalizada.',
                     'recommendations' => [[
@@ -281,7 +280,7 @@ class BookRecommendationControllerTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'www.googleapis.com/books/v1/volumes*' => Http::response($this->googleBooksResponse()),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response(
                 $this->geminiResponse([
                     'summary' => 'Una selección personalizada.',
                     'recommendations' => [[
@@ -309,7 +308,7 @@ class BookRecommendationControllerTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'www.googleapis.com/books/v1/volumes*' => Http::response($this->googleBooksResponse()),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response([], 503),
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response([], 503),
         ]);
 
         $response = $this->actingAs($user)->post(route('recommendations.store'));
@@ -330,7 +329,7 @@ class BookRecommendationControllerTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'www.googleapis.com/books/v1/volumes*' => Http::response($this->googleBooksResponse()),
-            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+            'generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent' => Http::response(
                 $this->geminiResponse([
                     'summary' => 'Una selección personalizada.',
                     'recommendations' => [[
@@ -395,13 +394,12 @@ class BookRecommendationControllerTest extends TestCase
     private function geminiResponse(array $output): array
     {
         return [
-            'status' => 'completed',
-            'steps' => [[
-                'type' => 'model_output',
-                'content' => [[
-                    'type' => 'text',
-                    'text' => json_encode($output, JSON_THROW_ON_ERROR),
-                ]],
+            'candidates' => [[
+                'content' => [
+                    'parts' => [[
+                        'text' => json_encode($output, JSON_THROW_ON_ERROR),
+                    ]],
+                ],
             ]],
         ];
     }
