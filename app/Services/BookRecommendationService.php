@@ -82,12 +82,12 @@ class BookRecommendationService
         $categories = $library
             ->flatMap(fn (Book $book): array => $book->categories ?? [])
             ->filter(fn (mixed $value): bool => is_string($value) && filled(trim($value)))
-            ->map(fn (string $value): string => trim($value))
+            ->map(fn (string $value): string => trim(Str::before($value, '/')))
+            ->filter()
             ->countBy()
             ->sortDesc()
             ->keys()
-            ->take(3)
-            ->map(fn (string $category): string => 'subject:"'.Str::replace('"', '', $category).'"');
+            ->take(3);
 
         $authors = $library
             ->flatMap(fn (Book $book): array => $book->authors ?? [])
@@ -98,12 +98,11 @@ class BookRecommendationService
             ->countBy()
             ->sortDesc()
             ->keys()
-            ->take(2)
-            ->map(fn (string $author): string => 'inauthor:"'.Str::replace('"', '', $author).'"');
+            ->take(2);
 
         return $categories
             ->concat($authors)
-            ->push('subject:fiction')
+            ->push('fiction')
             ->unique()
             ->values()
             ->all();

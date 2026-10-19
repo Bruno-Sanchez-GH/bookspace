@@ -96,7 +96,7 @@ class BookRecommendationControllerTest extends TestCase
         $response->assertSessionHas('bookRecommendations.books.0.external_id', 'hyperion-volume');
         Http::assertSent(function (Request $request): bool {
             return str_starts_with($request->url(), 'https://www.googleapis.com/books/v1/volumes?')
-                && str_contains(urldecode($request->url()), 'q=subject:"Science Fiction"')
+                && str_contains(urldecode($request->url()), 'q=Science Fiction')
                 && str_contains($request->url(), 'maxResults=40');
         });
         Http::assertSent(function (Request $request): bool {
@@ -167,11 +167,11 @@ class BookRecommendationControllerTest extends TestCase
         $response->assertSessionHas('bookRecommendations.books.0.title', 'Dune Messiah');
         Http::assertSent(fn (Request $request): bool => str_contains(
             urldecode($request->url()),
-            'q=subject:"Science Fiction"',
+            'q=Science Fiction',
         ));
         Http::assertSent(fn (Request $request): bool => str_contains(
             urldecode($request->url()),
-            'q=inauthor:"Frank Herbert"',
+            'q=Frank Herbert',
         ));
         Http::assertSentCount(3);
     }
