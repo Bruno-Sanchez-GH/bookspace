@@ -19,13 +19,23 @@
                     <div class="collapse navbar-collapse" id="bookspaceNavbar">
                         <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 bookspace-navbar__menu">
                             <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ url('/') }}">Inicio</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#explorar-libros">Explorar libros</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#mi-biblioteca">Mi biblioteca</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('catalog.*') ? 'active' : '' }}" href="{{ route('catalog.index') }}">Explorar libros</a></li>
+                            @auth
+                                <li class="nav-item"><a class="nav-link {{ request()->routeIs('library.*') ? 'active' : '' }}" href="{{ route('library.index') }}">Mi biblioteca</a></li>
+                            @endauth
                             <li class="nav-item"><a class="nav-link bookspace-nav-pill {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ url('/dashboard') }}">Estadísticas</a></li>
                         </ul>
                         <div class="bookspace-navbar__actions">
-                            <a class="bookspace-auth-link" href="javascript:void(0)">Iniciar sesión</a>
-                            <a class="btn bookspace-btn bookspace-btn--outline" href="javascript:void(0)">Crear cuenta</a>
+                            @guest
+                                <a class="bookspace-auth-link" href="{{ route('login') }}">Iniciar sesión</a>
+                                <a class="btn bookspace-btn bookspace-btn--outline" href="{{ route('register') }}">Crear cuenta</a>
+                            @else
+                                <span class="bookspace-user-name">{{ auth()->user()->name }}</span>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="btn bookspace-btn bookspace-btn--outline">Cerrar sesión</button>
+                                </form>
+                            @endguest
                         </div>
                     </div>
                 </div>
@@ -41,13 +51,15 @@
                         <div class="bookspace-footer__brand-block">
                             <a class="bookspace-brand bookspace-brand--footer" href="{{ url('/') }}">Book<span>Space</span></a>
                             <p>Descubrí, explorá y organizá tus próximas lecturas.</p>
-                            <small>Preparado para integrar Google Books como futura fuente de información bibliográfica.</small>
+                            <small>Catálogo conectado con Google Books y biblioteca personal persistente.</small>
                         </div>
                         <div class="bookspace-footer__links">
                             <span class="bookspace-footer__title">Navegación</span>
                             <a href="{{ url('/') }}">Inicio</a>
-                            <a href="{{ url('/') }}#explorar-libros">Explorar</a>
-                            <a href="{{ url('/') }}#mi-biblioteca">Mi biblioteca</a>
+                            <a href="{{ route('catalog.index') }}">Explorar</a>
+                            @auth
+                                <a href="{{ route('library.index') }}">Mi biblioteca</a>
+                            @endauth
                             <a href="{{ url('/dashboard') }}">Estadísticas</a>
                         </div>
                         <div class="bookspace-footer__meta">

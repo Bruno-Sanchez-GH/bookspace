@@ -9,19 +9,19 @@
                         Descubrí libros, explorá nuevas historias y organizá tu biblioteca personal.
                     </p>
 
-                    <form class="bookspace-search" action="javascript:void(0)">
-                        <input type="search" class="form-control" placeholder="Buscar por título, autor, categoría o ISBN..." aria-label="Buscar libros">
+                    <form class="bookspace-search" action="{{ route('catalog.index') }}" method="GET">
+                        <input name="q" type="search" class="form-control" placeholder="Buscar por título, autor, categoría o ISBN..." aria-label="Buscar libros" required minlength="2">
                         <button type="submit" class="btn bookspace-btn bookspace-btn--coral">Buscar</button>
                     </form>
 
                     <div class="bookspace-hero__chips">
                         <div class="bookspace-chip">
                             <strong>Exploración guiada</strong>
-                            <span>Una interfaz preparada para integrar Google Books más adelante.</span>
+                            <span>Buscá títulos reales mediante Google Books.</span>
                         </div>
                         <div class="bookspace-chip">
                             <strong>Biblioteca personal</strong>
-                            <span>Guardá títulos y organizalos según tus intereses.</span>
+                            <span>Creá tu cuenta y guardá los títulos que te interesan.</span>
                         </div>
                     </div>
                 </div>
@@ -31,8 +31,8 @@
                             <p>Explorá BookSpace</p>
                             <ul>
                                 <li>Búsquedas por título, autor, categoría o ISBN</li>
-                                <li>Portadas y datos bibliográficos simulados</li>
-                                <li>Interfaz lista para futuras funcionalidades reales</li>
+                                <li>Portadas y datos bibliográficos desde Google Books</li>
+                                <li>Biblioteca personal conectada a MySQL mediante Eloquent</li>
                             </ul>
                         </div>
                     </div>

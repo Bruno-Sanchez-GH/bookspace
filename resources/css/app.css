@@ -52,7 +52,7 @@ body.bookspace-body {
     color: var(--bookspace-cyan);
 }
 
-.bookspace-navbar .nav-link {
+.bookspace-navbar.bookspace-navbar .nav-link {
     color: rgba(255, 255, 255, 0.84);
     font-weight: 600;
     padding: 0.8rem 1rem;
@@ -60,8 +60,8 @@ body.bookspace-body {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.bookspace-navbar .nav-link.active,
-.bookspace-navbar .nav-link:hover {
+.bookspace-navbar.bookspace-navbar .nav-link.active,
+.bookspace-navbar.bookspace-navbar .nav-link:hover {
     color: var(--bookspace-white);
     background: rgba(255, 255, 255, 0.08);
 }
@@ -81,15 +81,24 @@ body.bookspace-body {
     gap: 0.75rem;
 }
 
-.bookspace-auth-link {
+.bookspace-navbar .navbar-collapse {
+    visibility: visible;
+}
+
+.bookspace-navbar .bookspace-auth-link {
     color: rgba(255, 255, 255, 0.84);
     font-weight: 600;
     text-decoration: none;
     padding: 0.8rem 0.25rem;
 }
 
-.bookspace-auth-link:hover {
+.bookspace-navbar .bookspace-auth-link:hover {
     color: var(--bookspace-white);
+}
+
+.bookspace-user-name {
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 700;
 }
 
 .bookspace-navbar-toggler {
@@ -187,26 +196,34 @@ body.bookspace-body {
     font-weight: 700;
 }
 
-.bookspace-btn--coral {
-    background: var(--bookspace-coral);
+.btn.bookspace-btn--coral {
+    border-color: var(--bookspace-coral);
+    background-color: var(--bookspace-coral);
     color: var(--bookspace-white);
 }
 
-.bookspace-btn--ghost {
+.btn.bookspace-btn--coral:hover,
+.btn.bookspace-btn--coral:focus-visible {
+    border-color: #cf725b;
+    background-color: #cf725b;
+    color: var(--bookspace-white);
+}
+
+.btn.bookspace-btn--ghost {
     border: 1px solid rgba(28, 42, 63, 0.12);
     background: var(--bookspace-white);
     color: var(--bookspace-navy);
 }
 
-.bookspace-btn--outline {
+.btn.bookspace-btn--outline {
     border: 1px solid rgba(255, 255, 255, 0.22);
     background: rgba(255, 255, 255, 0.08);
     color: var(--bookspace-white);
 }
 
-.bookspace-btn--outline:hover,
-.bookspace-btn--coral:hover,
-.bookspace-btn--ghost:hover {
+.btn.bookspace-btn--outline:hover,
+.btn.bookspace-btn--coral:hover,
+.btn.bookspace-btn--ghost:hover {
     transform: translateY(-1px);
 }
 
@@ -356,6 +373,14 @@ body.bookspace-body {
     object-fit: cover;
 }
 
+.bookspace-book-card__placeholder {
+    display: grid;
+    height: 100%;
+    place-items: center;
+    color: var(--bookspace-muted);
+    font-weight: 700;
+}
+
 .bookspace-book-card__body {
     margin-top: 1rem;
 }
@@ -369,6 +394,99 @@ body.bookspace-body {
     color: #335b6e;
     font-size: 0.8rem;
     font-weight: 700;
+}
+
+.bookspace-card-action {
+    margin-top: 1rem;
+}
+
+.bookspace-card-action .bookspace-btn {
+    width: 100%;
+}
+
+.bookspace-card-link,
+.bookspace-saved-label {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #335b6e;
+    font-weight: 700;
+}
+
+.bookspace-auth-card {
+    width: min(100%, 560px);
+    margin: 0 auto;
+    padding: 2rem;
+    border-radius: var(--bookspace-radius);
+    background: var(--bookspace-white);
+    box-shadow: var(--bookspace-shadow);
+}
+
+.bookspace-auth-card h1 {
+    color: var(--bookspace-navy);
+    font-weight: 800;
+}
+
+.bookspace-auth-card > p,
+.bookspace-form__footer {
+    color: var(--bookspace-muted);
+}
+
+.bookspace-form {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.bookspace-form label {
+    color: var(--bookspace-navy);
+    font-weight: 700;
+}
+
+.bookspace-form .form-control {
+    min-height: 52px;
+    border-color: #d6e0ea;
+    border-radius: 14px;
+}
+
+.bookspace-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bookspace-form__error {
+    display: block;
+    margin-top: 0.4rem;
+    color: #a43f36;
+    font-weight: 700;
+}
+
+.bookspace-form__footer {
+    margin: 1.25rem 0 0;
+}
+
+.bookspace-alert,
+.bookspace-empty-state {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 18px;
+}
+
+.bookspace-alert--success {
+    background: #e4f4eb;
+    color: #225e3c;
+}
+
+.bookspace-alert--error {
+    background: #fae9e7;
+    color: #8f322a;
+}
+
+.bookspace-empty-state {
+    background: var(--bookspace-white);
+    box-shadow: var(--bookspace-shadow);
+    color: var(--bookspace-muted);
+    text-align: center;
 }
 
 .bookspace-stat-card {
