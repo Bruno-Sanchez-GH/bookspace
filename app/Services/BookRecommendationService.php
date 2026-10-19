@@ -35,7 +35,10 @@ class BookRecommendationService
             throw new RecommendationException('Guardá al menos un libro antes de pedir recomendaciones.');
         }
 
-        $candidates = $this->candidatesFor($library);
+        $savedExternalIds = $user->savedBooks()
+            ->pluck('books.external_id')
+            ->all();
+        $candidates = $this->candidatesFor($library, $savedExternalIds);
 
         if ($candidates === []) {
             throw new RecommendationException('No encontramos libros nuevos para recomendarte en este momento.');
@@ -49,13 +52,13 @@ class BookRecommendationService
 
     /**
      * @param  Collection<int, Book>  $library
+     * @param  list<string>  $savedExternalIds
+     * @return list<array<string, mixed>>
      */
-    private function candidatesFor(Collection $library): array
+    private function candidatesFor(Collection $library, array $savedExternalIds): array
     {
-        $savedExternalIds = $library->pluck('external_id')->all();
-
         foreach ($this->searchQueries($library) as $query) {
-            $candidates = collect($this->googleBooks->search($query, 12))
+            $candidates = collect($this->googleBooks->search($query, 40))
                 ->filter(fn (array $book): bool => filled($book['external_id'] ?? null)
                     && ! in_array($book['external_id'], $savedExternalIds, true))
                 ->unique('external_id')

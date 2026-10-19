@@ -97,7 +97,7 @@ class BookRecommendationControllerTest extends TestCase
         Http::assertSent(function (Request $request): bool {
             return str_starts_with($request->url(), 'https://www.googleapis.com/books/v1/volumes?')
                 && str_contains(urldecode($request->url()), 'q=subject:"Science Fiction"')
-                && str_contains($request->url(), 'maxResults=12');
+                && str_contains($request->url(), 'maxResults=40');
         });
         Http::assertSent(function (Request $request): bool {
             $payload = $request->data();
@@ -174,6 +174,73 @@ class BookRecommendationControllerTest extends TestCase
             'q=inauthor:"Frank Herbert"',
         ));
         Http::assertSentCount(3);
+    }
+
+    public function test_recommendations_exclude_saved_books_outside_the_twenty_book_context(): void
+    {
+        config(['services.gemini.api_key' => 'test-gemini-key']);
+        $user = User::factory()->create();
+        $olderSavedBook = Book::factory()->create([
+            'external_id' => 'older-saved-volume',
+            'categories' => ['Juvenile Fiction'],
+        ]);
+        $user->savedBooks()->attach($olderSavedBook, [
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+        $recentSavedBooks = Book::factory()
+            ->count(20)
+            ->create(['categories' => ['Juvenile Fiction']]);
+        $user->savedBooks()->attach($recentSavedBooks, [
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.googleapis.com/books/v1/volumes*' => Http::response([
+                'items' => [
+                    [
+                        'id' => 'older-saved-volume',
+                        'volumeInfo' => [
+                            'title' => 'Already Saved',
+                            'categories' => ['Juvenile Fiction'],
+                        ],
+                    ],
+                    [
+                        'id' => 'new-volume',
+                        'volumeInfo' => [
+                            'title' => 'A New Recommendation',
+                            'categories' => ['Juvenile Fiction'],
+                        ],
+                    ],
+                ],
+            ]),
+            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+                $this->geminiResponse([
+                    'summary' => 'Una opción que todavía no guardaste.',
+                    'recommendations' => [[
+                        'external_id' => 'new-volume',
+                        'reason' => 'Coincide con tus intereses sin repetir tu biblioteca.',
+                    ]],
+                ]),
+            ),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('recommendations.store'));
+
+        $response->assertRedirect(route('library.index'));
+        $response->assertSessionHas('bookRecommendations.books.0.external_id', 'new-volume');
+        Http::assertSent(function (Request $request): bool {
+            if ($request->url() !== 'https://generativelanguage.googleapis.com/v1beta/interactions') {
+                return false;
+            }
+
+            return $request->data()['response_format']['schema']['properties']['recommendations']['items']['properties']['external_id']['enum'] === [
+                'new-volume',
+            ];
+        });
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'maxResults=40'));
+        Http::assertSentCount(2);
     }
 
     public function test_recommendations_escape_text_returned_by_gemini(): void
