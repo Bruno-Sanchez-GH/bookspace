@@ -35,14 +35,7 @@ class BookRecommendationService
             throw new RecommendationException('Guardá al menos un libro antes de pedir recomendaciones.');
         }
 
-        $savedExternalIds = $library->pluck('external_id')->all();
-        $candidates = collect($this->googleBooks->search($this->searchQuery($library), 12))
-            ->filter(fn (array $book): bool => filled($book['external_id'] ?? null)
-                && ! in_array($book['external_id'], $savedExternalIds, true))
-            ->unique('external_id')
-            ->take(8)
-            ->values()
-            ->all();
+        $candidates = $this->candidatesFor($library);
 
         if ($candidates === []) {
             throw new RecommendationException('No encontramos libros nuevos para recomendarte en este momento.');
@@ -57,22 +50,43 @@ class BookRecommendationService
     /**
      * @param  Collection<int, Book>  $library
      */
-    private function searchQuery(Collection $library): string
+    private function candidatesFor(Collection $library): array
     {
-        $category = $library
+        $savedExternalIds = $library->pluck('external_id')->all();
+
+        foreach ($this->searchQueries($library) as $query) {
+            $candidates = collect($this->googleBooks->search($query, 12))
+                ->filter(fn (array $book): bool => filled($book['external_id'] ?? null)
+                    && ! in_array($book['external_id'], $savedExternalIds, true))
+                ->unique('external_id')
+                ->take(8)
+                ->values();
+
+            if ($candidates->isNotEmpty()) {
+                return $candidates->all();
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  Collection<int, Book>  $library
+     * @return list<string>
+     */
+    private function searchQueries(Collection $library): array
+    {
+        $categories = $library
             ->flatMap(fn (Book $book): array => $book->categories ?? [])
             ->filter(fn (mixed $value): bool => is_string($value) && filled(trim($value)))
             ->map(fn (string $value): string => trim($value))
             ->countBy()
             ->sortDesc()
             ->keys()
-            ->first();
+            ->take(3)
+            ->map(fn (string $category): string => 'subject:"'.Str::replace('"', '', $category).'"');
 
-        if (is_string($category)) {
-            return 'subject:"'.Str::replace('"', '', $category).'"';
-        }
-
-        $author = $library
+        $authors = $library
             ->flatMap(fn (Book $book): array => $book->authors ?? [])
             ->filter(fn (mixed $value): bool => is_string($value)
                 && filled(trim($value))
@@ -81,13 +95,15 @@ class BookRecommendationService
             ->countBy()
             ->sortDesc()
             ->keys()
-            ->first();
+            ->take(2)
+            ->map(fn (string $author): string => 'inauthor:"'.Str::replace('"', '', $author).'"');
 
-        if (is_string($author)) {
-            return 'inauthor:"'.Str::replace('"', '', $author).'"';
-        }
-
-        return 'subject:fiction';
+        return $categories
+            ->concat($authors)
+            ->push('subject:fiction')
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

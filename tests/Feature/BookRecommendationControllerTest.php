@@ -116,6 +116,66 @@ class BookRecommendationControllerTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_recommendations_fall_back_to_an_author_when_a_category_has_no_new_books(): void
+    {
+        config(['services.gemini.api_key' => 'test-gemini-key']);
+        $user = User::factory()->create();
+        $savedBook = Book::factory()->create([
+            'external_id' => 'dune-volume',
+            'title' => 'Dune',
+            'authors' => ['Frank Herbert'],
+            'categories' => ['Science Fiction'],
+        ]);
+        $user->savedBooks()->attach($savedBook);
+        Http::preventStrayRequests();
+        Http::fake([
+            'www.googleapis.com/books/v1/volumes*' => Http::sequence()
+                ->push([
+                    'items' => [[
+                        'id' => 'dune-volume',
+                        'volumeInfo' => [
+                            'title' => 'Dune',
+                            'authors' => ['Frank Herbert'],
+                            'categories' => ['Science Fiction'],
+                        ],
+                    ]],
+                ])
+                ->push([
+                    'items' => [[
+                        'id' => 'dune-messiah-volume',
+                        'volumeInfo' => [
+                            'title' => 'Dune Messiah',
+                            'authors' => ['Frank Herbert'],
+                            'categories' => ['Science Fiction'],
+                        ],
+                    ]],
+                ]),
+            'generativelanguage.googleapis.com/v1beta/interactions' => Http::response(
+                $this->geminiResponse([
+                    'summary' => 'Continuá explorando el universo de Dune.',
+                    'recommendations' => [[
+                        'external_id' => 'dune-messiah-volume',
+                        'reason' => 'Continúa la historia y coincide con tus intereses.',
+                    ]],
+                ]),
+            ),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('recommendations.store'));
+
+        $response->assertRedirect(route('library.index'));
+        $response->assertSessionHas('bookRecommendations.books.0.title', 'Dune Messiah');
+        Http::assertSent(fn (Request $request): bool => str_contains(
+            urldecode($request->url()),
+            'q=subject:"Science Fiction"',
+        ));
+        Http::assertSent(fn (Request $request): bool => str_contains(
+            urldecode($request->url()),
+            'q=inauthor:"Frank Herbert"',
+        ));
+        Http::assertSentCount(3);
+    }
+
     public function test_recommendations_escape_text_returned_by_gemini(): void
     {
         config(['services.gemini.api_key' => 'test-gemini-key']);
