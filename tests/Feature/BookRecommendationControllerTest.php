@@ -105,6 +105,7 @@ class BookRecommendationControllerTest extends TestCase
             return $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent'
                 && $request->header('x-goog-api-key')[0] === 'test-gemini-key'
                 && $payload['generationConfig']['responseMimeType'] === 'application/json'
+                && $payload['generationConfig']['thinkingConfig']['thinkingLevel'] === 'low'
                 && $payload['generationConfig']['responseSchema']['properties']['recommendations']['items']['properties']['external_id']['enum'] === [
                     'hyperion-volume',
                     'foundation-volume',

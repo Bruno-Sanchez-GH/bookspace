@@ -41,6 +41,9 @@ class GeminiRecommendationService
                 'generationConfig' => [
                     'maxOutputTokens' => 800,
                     'temperature' => 0.2,
+                    'thinkingConfig' => [
+                        'thinkingLevel' => 'low',
+                    ],
                     'responseMimeType' => 'application/json',
                     'responseSchema' => $this->responseSchema($candidates),
                 ],
@@ -122,8 +125,8 @@ class GeminiRecommendationService
         return Http::acceptJson()
             ->baseUrl((string) config('services.gemini.base_url'))
             ->withHeader('x-goog-api-key', (string) config('services.gemini.api_key'))
-            ->connectTimeout(3)
-            ->timeout(20);
+            ->connectTimeout(10)
+            ->timeout(60);
     }
 
     /**
