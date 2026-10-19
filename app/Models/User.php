@@ -20,7 +20,9 @@ class User extends Authenticatable
 
     public function savedBooks(): BelongsToMany
     {
-        return $this->belongsToMany(Book::class)->withTimestamps();
+        return $this->belongsToMany(Book::class)
+            ->withPivot(['reading_status', 'current_page'])
+            ->withTimestamps();
     }
 
     /**

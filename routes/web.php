@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BookCatalogController;
+use App\Http\Controllers\BookRecommendationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SavedBookController;
@@ -24,8 +25,12 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/mi-biblioteca', [SavedBookController::class, 'index'])->name('library.index');
+    Route::post('/mi-biblioteca/recomendaciones', [BookRecommendationController::class, 'store'])
+        ->middleware('throttle:book-recommendations')
+        ->name('recommendations.store');
     Route::post('/mi-biblioteca/{externalId}', [SavedBookController::class, 'store'])
         ->where('externalId', '[A-Za-z0-9_-]+')
         ->name('library.store');
+    Route::patch('/mi-biblioteca/{book}', [SavedBookController::class, 'update'])->name('library.update');
     Route::delete('/mi-biblioteca/{book}', [SavedBookController::class, 'destroy'])->name('library.destroy');
 });

@@ -40,4 +40,10 @@ return [
         'api_key' => env('GOOGLE_BOOKS_API_KEY'),
     ],
 
+    'gemini' => [
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+    ],
+
 ];

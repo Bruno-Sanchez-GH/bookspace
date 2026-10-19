@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateReadingProgressRequest;
 use App\Models\Book;
+use App\ReadingStatus;
 use App\Services\GoogleBooksService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -19,7 +21,21 @@ class SavedBookController extends Controller
             ->latest('book_user.created_at')
             ->get();
 
-        return view('library.index', ['books' => $books]);
+        $progressPercentages = $books->mapWithKeys(function (Book $book): array {
+            if ($book->page_count === null || $book->page_count === 0) {
+                return [$book->getKey() => null];
+            }
+
+            $percentage = (int) round(((int) $book->pivot->current_page / $book->page_count) * 100);
+
+            return [$book->getKey() => min($percentage, 100)];
+        });
+
+        return view('library.index', [
+            'books' => $books,
+            'progressPercentages' => $progressPercentages,
+            'readingStatuses' => ReadingStatus::cases(),
+        ]);
     }
 
     public function store(
@@ -45,6 +61,16 @@ class SavedBookController extends Controller
         $request->user()->savedBooks()->syncWithoutDetaching([$book->id]);
 
         return back()->with('status', 'Libro guardado en tu biblioteca.');
+    }
+
+    public function update(UpdateReadingProgressRequest $request, Book $book): RedirectResponse
+    {
+        $request->user()->savedBooks()->updateExistingPivot(
+            $book->getKey(),
+            $request->safe()->only(['reading_status', 'current_page']),
+        );
+
+        return back()->with('status', 'Seguimiento de lectura actualizado.');
     }
 
     public function destroy(Request $request, Book $book): RedirectResponse
